@@ -36,6 +36,7 @@ scheduler = APScheduler()
 SWITCHBOT_STATUS = 'enabled'
 SCHEDULER_STATE_ON = False
 SCHEDULER_INTERVAL = 300
+SCHEDULER_BOOST = False
 
 SCHEDULER_START = 21            # start at 21:00
 SCHEDULER_START_NIGHT = 23      # start night mode at 23:00
@@ -65,6 +66,7 @@ class Device:
         self.name = name
         self.address = address
         self.status = 0 # 0 = 'off', 1 = 'on', 2 = 'night'
+        self.force = False
     
     def get_status_string(self):
         if self.status == 2:
@@ -108,7 +110,7 @@ class Device:
         return self.get_status_string() == expected
 
 def scheduleTask():
-    global SCHEDULER_START, SCHEDULER_END, TEMP_THRESHOLD_MIN
+    global SCHEDULER_BOOST, SCHEDULER_START, SCHEDULER_END, TEMP_THRESHOLD_MIN
     def in_between(now, start, end):
         if start <= end:
             return start <= now < end
@@ -116,7 +118,7 @@ def scheduleTask():
             return start <= now or now < end
 
     logging.info("run scheduleTask")
-    if datetime.datetime.today().weekday() in [4,5,6] or in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START,5), datetime.time(SCHEDULER_END,5)):
+    if SCHEDULER_BOOST or (datetime.datetime.today().weekday() in [4,5,6] or in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START,5), datetime.time(SCHEDULER_END,5))):
         logging.debug("run scheduleTask - time is ok- mode on")
         mode = 'on'
         if in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START_NIGHT,0), datetime.time(SCHEDULER_END,5)):
@@ -126,8 +128,11 @@ def scheduleTask():
         r = requests.get(url, headers={'Cache-Control': 'no-cache'}, timeout = 10)
         temp = r.json()["temperature"]
         logging.debug("run scheduleTask - temperature is {}".format(temp))
-        if is_ref_device_connected(args.ref_devices):
+        if SCHEDULER_BOOST or is_ref_device_connected(args.ref_devices):
             logging.debug("run scheduleTask - ref device is connected")
+            if SCHEDULER_BOOST: 
+                logging.debug("run scheduleTask - scheduler boost on - will switch {}".format(mode))
+                switch(mode)
             if temp < TEMP_THRESHOLD_MIN:
                 logging.debug("run scheduleTask - will switch {}".format(mode))
                 switch(mode)
@@ -142,6 +147,9 @@ def scheduleTask():
                 switch('off')
             else:
                 ...
+        else:
+            logging.debug("run scheduleTask - ref device is not connected - switch off")
+            switch('off')
     else:
         logging.debug("run scheduleTask - switch off")
         switch('off')
@@ -163,8 +171,10 @@ def is_ref_device_connected(device):
     return result
 
 def switch(state):
-    global bt_addr_list, SWITCHBOT_STATUS
+    global bt_addr_list, SWITCHBOT_STATUS, SCHEDULER_BOOST
     d_t_l = []
+    if state == 'off':
+        SCHEDULER_BOOST = False
     if SWITCHBOT_STATUS == 'enabled':
         for d in DEVICE_LIST:
             d_t = threading.Thread(target=d.switch, args=(state,))
@@ -182,12 +192,19 @@ def check_status(expected):
 @app.route('/manual/<mode>')
 def manual(mode):
     logging.info('run /manual/{}'.format(mode))
-    turn_off_scheduler() # make sure scheduler is off
+    # turn_off_scheduler() # make sure scheduler is off
     switch(mode)
     res = check_status(mode)
     resp = jsonify(success=res)
     return resp
 
+@app.route('/scheduler/boost')
+def scheduler_boost():
+    global SCHEDULER_BOOST
+    SCHEDULER_BOOST = True
+    resp = jsonify(success=True)
+    return resp, 200
+    
 @app.route('/scheduler/<mode>')
 def schedule_on(mode):
     global SCHEDULER_STATE_ON
@@ -225,12 +242,12 @@ def disable():
 
 @app.route('/status')
 def status():
-    global SCHEDULER_STATE_ON, TEMP_THRESHOLD_MIN, TEMP_THRESHOLD_MAX_NIGHT, TEMP_THRESHOLD_MAX, DEVICE_LIST
+    global SCHEDULER_STATE_ON, SCHEDULER_BOOST, TEMP_THRESHOLD_MIN, TEMP_THRESHOLD_MAX_NIGHT, TEMP_THRESHOLD_MAX, DEVICE_LIST
     res = []
     for d in DEVICE_LIST:
         res.append(d.get_info())
     logging.info('run /status')
-    return { "global_status": SWITCHBOT_STATUS, "scheduler_on": SCHEDULER_STATE_ON, "temp": { "min":TEMP_THRESHOLD_MIN, "max_night": TEMP_THRESHOLD_MAX_NIGHT, "max": TEMP_THRESHOLD_MAX}, "devices": res}
+    return { "global_status": SWITCHBOT_STATUS, "scheduler_on": SCHEDULER_STATE_ON, "scheduler_boost": SCHEDULER_BOOST, "temp": { "min":TEMP_THRESHOLD_MIN, "max_night": TEMP_THRESHOLD_MAX_NIGHT, "max": TEMP_THRESHOLD_MAX}, "devices": res}
 
 # to edit threshold values
 @app.route('/set_temp/<type>/<float:temp>')
