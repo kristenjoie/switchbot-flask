@@ -126,19 +126,19 @@ def scheduleTask():
         r = requests.get(url, headers={'Cache-Control': 'no-cache'}, timeout = 10)
         temp = r.json()["temperature"]
         logging.debug("run scheduleTask - temperature is {}".format(temp))
-        if temp < TEMP_THRESHOLD_MIN:
-            logging.debug("run scheduleTask - check device is connected")
-            if is_ref_device_connected(args.ref_devices):
-                logging.debug("run scheduleTask - ref device is connected - will switch {}".format(mode))
+        if is_ref_device_connected(args.ref_devices):
+            logging.debug("run scheduleTask - ref device is connected")
+            if temp < TEMP_THRESHOLD_MIN:
+                logging.debug("run scheduleTask - will switch {}".format(mode))
                 switch(mode)
-        elif mode == 'night' and temp > TEMP_THRESHOLD_MAX_NIGHT:
-            logging.debug("run scheduleTask - mode night - {} > {}".format(temp, TEMP_THRESHOLD_MAX_NIGHT))
-            switch('off')
-        elif temp > TEMP_THRESHOLD_MAX:
-            logging.debug("run scheduleTask - {} > {}".format(temp, TEMP_THRESHOLD_MAX))
-            switch('off')
-        else:
-            ...
+            elif mode == 'night' and temp > TEMP_THRESHOLD_MAX_NIGHT:
+                logging.debug("run scheduleTask - mode night - {} > {}".format(temp, TEMP_THRESHOLD_MAX_NIGHT))
+                switch('off')
+            elif temp > TEMP_THRESHOLD_MAX:
+                logging.debug("run scheduleTask - {} > {}".format(temp, TEMP_THRESHOLD_MAX))
+                switch('off')
+            else:
+                ...
     else:
         logging.debug("run scheduleTask - switch off")
         switch('off')
