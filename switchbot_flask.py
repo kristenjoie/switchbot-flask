@@ -38,7 +38,7 @@ SCHEDULER_STATE_ON = False
 SCHEDULER_INTERVAL = 300
 
 SCHEDULER_START = 21            # start at 21:00
-SCHEDULER_START_NIGHT = 0       # start night mode at 00:00
+SCHEDULER_START_NIGHT = 23      # start night mode at 23:00
 SCHEDULER_END = 5               # stop at 05:00
 TEMP_THRESHOLD_MIN = args.scheduler_temp_min
 TEMP_THRESHOLD_MAX = args.scheduler_temp_max
@@ -130,6 +130,9 @@ def scheduleTask():
             logging.debug("run scheduleTask - ref device is connected")
             if temp < TEMP_THRESHOLD_MIN:
                 logging.debug("run scheduleTask - will switch {}".format(mode))
+                switch(mode)
+            elif mode == 'night' and check_status('on') and temp < TEMP_THRESHOLD_MAX_NIGHT:
+                logging.debug("run scheduleTask - switch from on to night - {} > {}".format(temp, TEMP_THRESHOLD_MAX_NIGHT))
                 switch(mode)
             elif mode == 'night' and temp > TEMP_THRESHOLD_MAX_NIGHT:
                 logging.debug("run scheduleTask - mode night - {} > {}".format(temp, TEMP_THRESHOLD_MAX_NIGHT))
