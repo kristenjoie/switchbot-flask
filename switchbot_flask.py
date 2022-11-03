@@ -39,8 +39,9 @@ SCHEDULER_INTERVAL = 300
 SCHEDULER_BOOST = False
 
 SCHEDULER_START = 21            # start at 21:00
-SCHEDULER_START_NIGHT = 23      # start night mode at 23:00
 SCHEDULER_END = 5               # stop at 05:00
+SCHEDULER_START_NIGHT = 23      # start night mode at 23:00
+SCHEDULER_END_NIGHT = 8         # end night mode at 08:00
 TEMP_THRESHOLD_MIN = args.scheduler_temp_min
 TEMP_THRESHOLD_MAX = args.scheduler_temp_max
 TEMP_THRESHOLD_MAX_NIGHT = args.scheduler_temp_max_night
@@ -121,7 +122,7 @@ def scheduleTask():
     if SCHEDULER_BOOST or (datetime.datetime.today().weekday() in [4,5,6] or in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START,5), datetime.time(SCHEDULER_END,5))):
         logging.debug("run scheduleTask - time is ok- mode on")
         mode = 'on'
-        if in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START_NIGHT,0), datetime.time(SCHEDULER_END,5)):
+        if in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START_NIGHT,0), datetime.time(SCHEDULER_END_NIGHT,0)):
             logging.debug("run scheduleTask - time is ok - mode night")
             mode = 'night'
         url = "http://{}:{}".format(args.sensor_host, args.sensor_port)
