@@ -163,11 +163,16 @@ def turn_off_scheduler():
         logging.debug("run is pause_job()")
         SCHEDULER_STATE_ON = not SCHEDULER_STATE_ON
 
-def is_ref_device_connected(device):
-    logging.debug("run is_device_connected()")
-    stdout = subprocess.Popen(["bluetoothctl", "connect", device], stdout=subprocess.PIPE) # ugly method to check device is at home
-    stdout.wait()
-    result = "Connected: yes" in stdout.stdout.read().decode("utf-8")
+def is_ref_device_connected(device, retry=0):
+    result = False
+    if retry < 5 :
+        logging.debug("run is_device_connected()")
+        stdout = subprocess.Popen(["bluetoothctl", "connect", device], stdout=subprocess.PIPE) # ugly method to check device is at home
+        stdout.wait()
+        result = "Connected: yes" in stdout.stdout.read().decode("utf-8")
+        if not result:
+            retry+=1
+            is_ref_device_connected(device, retry)
     logging.debug("ref device is {}".format(result))
     return result
 
@@ -249,6 +254,12 @@ def status():
         res.append(d.get_info())
     logging.info('run /status')
     return { "global_status": SWITCHBOT_STATUS, "scheduler_on": SCHEDULER_STATE_ON, "scheduler_boost": SCHEDULER_BOOST, "temp": { "min":TEMP_THRESHOLD_MIN, "max_night": TEMP_THRESHOLD_MAX_NIGHT, "max": TEMP_THRESHOLD_MAX}, "devices": res}
+
+@app.route('/test/ref_device')
+def test_ref_device():
+    is_connected = is_ref_device_connected(args.ref_devices)
+    resp = jsonify(result=is_connected)
+    return resp
 
 # to edit threshold values
 @app.route('/set_temp/<type>/<float:temp>')
