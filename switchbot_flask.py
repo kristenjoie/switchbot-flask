@@ -261,6 +261,14 @@ def test_ref_device():
     resp = jsonify(result=is_connected)
     return resp
 
+@app.route('/log')
+def print_log():
+    msg = '<span style="white-space: pre-line">'
+    with open('heater.log') as file:
+        for line in (file.readlines() [-150:]):
+            msg += line
+    return msg + '</span>'
+
 # to edit threshold values
 @app.route('/set_temp/<type>/<float:temp>')
 def set_temp(type, temp):
