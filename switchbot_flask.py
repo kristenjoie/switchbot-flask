@@ -195,6 +195,23 @@ def check_status(expected):
         result &= d.is_status(expected)
     return result
 
+@app.route('/')
+def home():
+    msg = "<a href=status>status</a><br>"
+    msg += "<a href=test/ref_device>test/ref_device</a><br>"
+    msg += "<a href=log>log</a><br><br>"
+    msg += "<a href=manual/on>manual/on</a><br>"
+    msg += "<a href=manual/off>manual/off</a><br>"
+    msg += "<a href=scheduler/on>scheduler/on</a><br>"
+    msg += "<a href=scheduler/off>scheduler/off</a><br>"
+    msg += "<a href=scheduler/boost>scheduler/boost</a><br>"
+    msg += "<a href=set_temp/min/16.5>set_temp/min/16.5</a><br>"
+    msg += "<a href=set_temp/max_night/17.5>set_temp/max_night/17.5</a><br>"
+    msg += "<a href=set_temp/max/18.5>set_temp/max/18.5</a><br>"
+    msg += "<a href=enable>enable</a><br>"
+    msg += "<a href=disable>disable</a><br>"
+    return msg
+
 @app.route('/manual/<mode>')
 def manual(mode):
     logging.info('run /manual/{}'.format(mode))
