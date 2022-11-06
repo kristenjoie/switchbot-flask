@@ -7,7 +7,8 @@ This application is used to control my heating system. There are commands to man
 There is also a "scheduler" mode. This mode will check 3 parameters to choose to turn on/off heaters:
  - day of the week and time of the day
  - current temperature in my house
- - detection of my phone thanks to a bluetooth connection
+ - detection of my phone on my wifi network or bluetooth
+
 
 ## 🚦 Pre-requisite
 

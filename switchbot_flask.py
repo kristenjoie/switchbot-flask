@@ -10,6 +10,7 @@ import logging
 import logging.handlers
 import subprocess
 import threading
+import os
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--server_port", type=int,
@@ -21,6 +22,8 @@ parser.add_argument("--sensor_port", type=int,
                     help="sensor port to use", default=5000)
 # Device used to check presence
 parser.add_argument("--ref_devices", type=str,
+                    help="device address", default="192.168.1.9")
+parser.add_argument("--ref_devices_bluetooth", type=str,
                     help="device address", default="FC:AA:81:6D:BF:76")
 # treshold values
 parser.add_argument("--scheduler_temp_min", type=int,
@@ -129,7 +132,7 @@ def scheduleTask():
         r = requests.get(url, headers={'Cache-Control': 'no-cache'}, timeout = 10)
         temp = r.json()["temperature"]
         logging.debug("run scheduleTask - temperature is {}".format(temp))
-        if SCHEDULER_BOOST or is_ref_device_connected(args.ref_devices):
+        if SCHEDULER_BOOST or is_ref_device_connected():
             logging.debug("run scheduleTask - ref device is connected")
             if SCHEDULER_BOOST: 
                 logging.debug("run scheduleTask - scheduler boost on - will switch {}".format(mode))
@@ -163,16 +166,26 @@ def turn_off_scheduler():
         logging.debug("run is pause_job()")
         SCHEDULER_STATE_ON = not SCHEDULER_STATE_ON
 
-def is_ref_device_connected(device, retry=0):
+def is_ref_device_connected(retry=0):
+    logging.debug("run is_device_connected(): retry= {}".format(retry))
     result = False
     if retry < 5 :
-        logging.debug("run is_device_connected()")
-        stdout = subprocess.Popen(["bluetoothctl", "connect", device], stdout=subprocess.PIPE) # ugly method to check device is at home
+        stdout = subprocess.Popen(["ping", "-c", "1", args.ref_devices], stdout=subprocess.PIPE)
         stdout.wait()
-        result = "Connected: yes" in stdout.stdout.read().decode("utf-8")
-        if not result:
-            retry+=1
-            is_ref_device_connected(device, retry)
+        if "1 received" in stdout.stdout.read().decode("utf-8"):
+            result = True
+        else:
+            logging.debug("is_device_connected() - ping ko - try bluetooth")
+            stdout = subprocess.Popen(["bluetoothctl", "connect", args.ref_devices_bluetooth], stdout=subprocess.PIPE) # ugly method to check device is at home
+            stdout.wait()
+            result_msg = stdout.stdout.read().decode("utf-8")
+            result = "Connected: yes" in result_msg or "Connection successful" in result_msg
+            stdout = subprocess.Popen(["bluetoothctl", "disconnect", args.ref_devices_bluetooth], stdout=subprocess.PIPE) # ugly method to check device is at home
+            stdout.wait()
+            if not result:
+                logging.debug("is_device_connected() - ping & bluetooth ko - retry")
+                retry += 1
+                is_ref_device_connected(retry)
     logging.debug("ref device is {}".format(result))
     return result
 
@@ -274,7 +287,7 @@ def status():
 
 @app.route('/test/ref_device')
 def test_ref_device():
-    is_connected = is_ref_device_connected(args.ref_devices)
+    is_connected = is_ref_device_connected()
     resp = jsonify(result=is_connected)
     return resp
 
