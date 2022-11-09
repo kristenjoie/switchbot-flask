@@ -27,11 +27,11 @@ parser.add_argument("--ref_devices_bluetooth", type=str,
                     help="device address", default="FC:AA:81:6D:BF:76")
 # treshold values
 parser.add_argument("--scheduler_temp_min", type=int,
-                    help="scheduler temperature treshold min", default=16.5)
+                    help="scheduler temperature treshold min", default=17.0)
 parser.add_argument("--scheduler_temp_max", type=int,
-                    help="scheduler temperature treshold max", default=18.5)
+                    help="scheduler temperature treshold max", default=19.5)
 parser.add_argument("--scheduler_temp_max_night", type=int,
-                    help="scheduler temperature treshold max night", default=17.5)
+                    help="scheduler temperature treshold max night", default=18.0)
 args = parser.parse_args()
 
 app = Flask(__name__)
