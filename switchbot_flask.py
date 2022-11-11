@@ -132,8 +132,10 @@ def scheduleTask():
         r = requests.get(url, headers={'Cache-Control': 'no-cache'}, timeout = 10)
         temp = r.json()["temperature"]
         logging.debug("run scheduleTask - temperature is {}".format(temp))
-        if SCHEDULER_BOOST or is_ref_device_connected():
-            logging.debug("run scheduleTask - ref device is connected")
+        if not check_status('off') and not is_ref_device_connected():
+            logging.debug("run scheduleTask - ref device is not connected - switch off")
+            switch('off')
+        else:
             if SCHEDULER_BOOST: 
                 logging.debug("run scheduleTask - scheduler boost on - will switch {}".format(mode))
                 switch(mode)
@@ -151,9 +153,6 @@ def scheduleTask():
                 switch('off')
             else:
                 ...
-        else:
-            logging.debug("run scheduleTask - ref device is not connected - switch off")
-            switch('off')
     else:
         logging.debug("run scheduleTask - switch off")
         switch('off')
