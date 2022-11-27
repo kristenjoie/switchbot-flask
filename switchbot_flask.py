@@ -29,7 +29,7 @@ parser.add_argument("--ref_devices_bluetooth", type=str,
 parser.add_argument("--scheduler_temp_min", type=int,
                     help="scheduler temperature treshold min", default=17.0)
 parser.add_argument("--scheduler_temp_max", type=int,
-                    help="scheduler temperature treshold max", default=19.5)
+                    help="scheduler temperature treshold max", default=19.0)
 parser.add_argument("--scheduler_temp_max_night", type=int,
                     help="scheduler temperature treshold max night", default=18.0)
 args = parser.parse_args()
@@ -142,6 +142,9 @@ def scheduleTask():
                 switch(mode)
             if temp < TEMP_THRESHOLD_MIN:
                 logging.debug("run scheduleTask - will switch {}".format(mode))
+                switch(mode)
+            elif mode == 'on' and check_status('night') and temp < TEMP_THRESHOLD_MAX:
+                logging.debug("run scheduleTask - switch from night to on - {} > {}".format(temp, TEMP_THRESHOLD_MAX))
                 switch(mode)
             elif mode == 'night' and check_status('on') and temp < TEMP_THRESHOLD_MAX_NIGHT:
                 logging.debug("run scheduleTask - switch from on to night - {} > {}".format(temp, TEMP_THRESHOLD_MAX_NIGHT))
