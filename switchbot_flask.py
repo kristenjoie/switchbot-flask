@@ -114,7 +114,7 @@ class Device:
         return self.get_status_string() == expected
 
 def scheduleTask():
-    global SCHEDULER_BOOST, SCHEDULER_START, SCHEDULER_END, TEMP_THRESHOLD_MIN
+    global SCHEDULER_STATE_ON, SCHEDULER_BOOST, SCHEDULER_START, SCHEDULER_END, TEMP_THRESHOLD_MIN
     def in_between(now, start, end):
         if start <= end:
             return start <= now < end
@@ -122,7 +122,7 @@ def scheduleTask():
             return start <= now or now < end
 
     logging.info("run scheduleTask")
-    if SCHEDULER_BOOST or (datetime.datetime.today().weekday() in [4,5,6] or in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START,5), datetime.time(SCHEDULER_END,5))):
+    if SCHEDULER_STATE_ON and (SCHEDULER_BOOST or (datetime.datetime.today().weekday() in [4,5,6] or in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START,5), datetime.time(SCHEDULER_END,5)))):
         logging.debug("run scheduleTask - time is ok- mode on")
         mode = 'on'
         if in_between(datetime.datetime.now().time(), datetime.time(SCHEDULER_START_NIGHT,0), datetime.time(SCHEDULER_END_NIGHT,0)):
@@ -164,9 +164,9 @@ def scheduleTask():
 def turn_off_scheduler():
     global SCHEDULER_STATE_ON
     logging.debug("run turn_off_scheduler()")
+    scheduler.pause_job(id='Scheduled Task')
+    logging.debug("run is pause_job()")
     if SCHEDULER_STATE_ON:
-        scheduler.pause_job(id='Scheduled Task')
-        logging.debug("run is pause_job()")
         SCHEDULER_STATE_ON = not SCHEDULER_STATE_ON
 
 def is_ref_device_connected(retry=0):
