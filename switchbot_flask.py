@@ -30,6 +30,8 @@ parser.add_argument("--scheduler_temp_min", type=int,
                     help="scheduler temperature treshold min", default=17.0)
 parser.add_argument("--scheduler_temp_max", type=int,
                     help="scheduler temperature treshold max", default=19.0)
+parser.add_argument("--scheduler_temp_min_night", type=int,
+                    help="scheduler temperature treshold min night", default=16.5)
 parser.add_argument("--scheduler_temp_max_night", type=int,
                     help="scheduler temperature treshold max night", default=18.0)
 args = parser.parse_args()
@@ -47,6 +49,7 @@ SCHEDULER_START_NIGHT = 23      # start night mode at 23:00
 SCHEDULER_END_NIGHT = 8         # end night mode at 08:00
 TEMP_THRESHOLD_MIN = args.scheduler_temp_min
 TEMP_THRESHOLD_MAX = args.scheduler_temp_max
+TEMP_THRESHOLD_MIN_NIGHT = args.scheduler_temp_min_night
 TEMP_THRESHOLD_MAX_NIGHT = args.scheduler_temp_max_night
 
 DEVICE_LIST = []
@@ -140,7 +143,7 @@ def scheduleTask():
             if SCHEDULER_BOOST: 
                 logging.debug("run scheduleTask - scheduler boost on - will switch {}".format(mode))
                 switch(mode)
-            if temp < TEMP_THRESHOLD_MIN:
+            if (mode == 'on' and temp < TEMP_THRESHOLD_MIN) or (mode == 'night' and temp < TEMP_THRESHOLD_MIN_NIGHT):
                 logging.debug("run scheduleTask - will switch {}".format(mode))
                 switch(mode)
             elif mode == 'on' and check_status('night') and temp < TEMP_THRESHOLD_MAX:
@@ -221,9 +224,10 @@ def home():
     msg += "<a href=scheduler/on>scheduler/on</a><br>"
     msg += "<a href=scheduler/off>scheduler/off</a><br>"
     msg += "<a href=scheduler/boost>scheduler/boost</a><br>"
-    msg += "<a href=set_temp/min/16.5>set_temp/min/16.5</a><br>"
-    msg += "<a href=set_temp/max_night/17.5>set_temp/max_night/17.5</a><br>"
-    msg += "<a href=set_temp/max/18.5>set_temp/max/18.5</a><br>"
+    msg += "<a href=set_temp/min/17.0>set_temp/min/17.0</a><br>"
+    msg += "<a href=set_temp/min_night/16.5>set_temp/mIN_night/16.5</a><br>"
+    msg += "<a href=set_temp/max_night/18.0>set_temp/max_night/18.0</a><br>"
+    msg += "<a href=set_temp/max/19.0>set_temp/max/19.0</a><br>"
     msg += "<a href=enable>enable</a><br>"
     msg += "<a href=disable>disable</a><br>"
     return msg
@@ -281,12 +285,12 @@ def disable():
 
 @app.route('/status')
 def status():
-    global SCHEDULER_STATE_ON, SCHEDULER_BOOST, TEMP_THRESHOLD_MIN, TEMP_THRESHOLD_MAX_NIGHT, TEMP_THRESHOLD_MAX, DEVICE_LIST
+    global SCHEDULER_STATE_ON, SCHEDULER_BOOST, TEMP_THRESHOLD_MIN, TEMP_THRESHOLD_MIN_NIGHT, TEMP_THRESHOLD_MAX_NIGHT, TEMP_THRESHOLD_MAX, DEVICE_LIST
     res = []
     for d in DEVICE_LIST:
         res.append(d.get_info())
     logging.info('run /status')
-    return { "global_status": SWITCHBOT_STATUS, "scheduler_on": SCHEDULER_STATE_ON, "scheduler_boost": SCHEDULER_BOOST, "temp": { "min":TEMP_THRESHOLD_MIN, "max_night": TEMP_THRESHOLD_MAX_NIGHT, "max": TEMP_THRESHOLD_MAX}, "devices": res}
+    return { "global_status": SWITCHBOT_STATUS, "scheduler_on": SCHEDULER_STATE_ON, "scheduler_boost": SCHEDULER_BOOST, "temp": { "min":TEMP_THRESHOLD_MIN, "min_night": TEMP_THRESHOLD_MIN_NIGHT, "max_night": TEMP_THRESHOLD_MAX_NIGHT, "max": TEMP_THRESHOLD_MAX}, "devices": res}
 
 @app.route('/test/ref_device')
 def test_ref_device():
@@ -305,9 +309,10 @@ def print_log():
 # to edit threshold values
 @app.route('/set_temp/<type>/<float:temp>')
 def set_temp(type, temp):
-    global TEMP_THRESHOLD_MIN, TEMP_THRESHOLD_MAX, TEMP_THRESHOLD_MAX_NIGHT
+    global TEMP_THRESHOLD_MIN, TEMP_THRESHOLD_MAX, TEMP_THRESHOLD_MIN_NIGHT, TEMP_THRESHOLD_MAX_NIGHT
     if type == 'min' : TEMP_THRESHOLD_MIN = temp
     elif type == 'max' : TEMP_THRESHOLD_MAX = temp
+    elif type == 'min_night' : TEMP_THRESHOLD_MIN_NIGHT = temp
     elif type == 'max_night' : TEMP_THRESHOLD_MAX_NIGHT = temp
     return "Value setted"
 
