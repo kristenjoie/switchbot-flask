@@ -92,7 +92,7 @@ class Device:
             return True
         elif state != self.get_status_string() and retry < 10:
             logging.debug("will switch({}): {} - {}".format(state, self.name, self.address))
-            stdout = subprocess.Popen(["python3", "python-host/switchbot_py3.py", "-d" , self.address, "-c", "press"], stdout=subprocess.PIPE) # ugly but easy
+            stdout = subprocess.Popen(["python3", "{}/python-host/switchbot_py3.py".format(os.path.dirname(os.path.realpath(__file__))), "-d" , self.address, "-c", "press"], stdout=subprocess.PIPE) # ugly but easy
             stdout.wait()
             result =  stdout.communicate()[0].decode("utf-8")
             if "successful" not in result:
