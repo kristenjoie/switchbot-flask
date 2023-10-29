@@ -191,7 +191,7 @@ def is_ref_device_connected(retry=0):
             if not result:
                 logging.debug("is_device_connected() - ping & bluetooth ko - retry")
                 retry += 1
-                is_ref_device_connected(retry)
+                return is_ref_device_connected(retry)
     logging.debug("ref device is {}".format(result))
     return result
 
